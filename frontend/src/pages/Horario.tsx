@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import API_URL from "../config/api";
 
 interface Bloque {
   id: number;
@@ -141,7 +142,7 @@ function Horario() {
     const cargarReservas = async () => {
       try {
         const respuesta = await fetch(
-          "http://localhost:3000/reservas/publicas"
+          (`${API_URL}/reservas/publicas`)
         );
 
         if (!respuesta.ok) {
@@ -501,7 +502,7 @@ function Horario() {
 
     try {
       const respuesta = await fetch(
-        "http://localhost:3000/reservas/multiple",
+        `${API_URL}/reservas/multiple`,
         {
           method: "POST",
           headers: {
@@ -552,7 +553,7 @@ function Horario() {
       */
       const nuevasReservas =
         await fetch(
-          "http://localhost:3000/reservas/publicas"
+          (`${API_URL}/reservas/publicas`)
         );
 
       const datosReservas =

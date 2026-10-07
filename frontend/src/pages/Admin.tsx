@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import API_URL from "../config/api";
 
 interface Reserva {
   id: number;
@@ -133,7 +134,7 @@ function Admin() {
 
       const respuesta =
         await fetch(
-          "http://localhost:3000/reservas/admin",
+          `${API_URL}/reservas/admin`,
           {
             method: "GET",
 
@@ -249,7 +250,7 @@ function Admin() {
 
       const respuesta =
         await fetch(
-          "http://localhost:3000/admin/login",
+          `${API_URL}/admin/login`,
           {
             method: "POST",
 
@@ -360,7 +361,7 @@ function Admin() {
 
       const respuesta =
         await fetch(
-          `http://localhost:3000/reservas/grupo/${grupoId}`,
+          `${API_URL}/reservas/grupo/${grupoId}`,
           {
             method: "DELETE",
 
