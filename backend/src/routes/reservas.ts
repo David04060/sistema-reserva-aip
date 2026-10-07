@@ -1,8 +1,16 @@
 import { Router } from "express";
+import { randomUUID } from "crypto";
+
 import db from "../database";
 import { verificarAdministrador } from "../middleware/adminAuth";
 
 const router = Router();
+
+/*
+|--------------------------------------------------------------------------
+| DÍAS PERMITIDOS
+|--------------------------------------------------------------------------
+*/
 
 const diasPermitidos = [
   "Lunes",
@@ -12,20 +20,87 @@ const diasPermitidos = [
   "Viernes"
 ];
 
+/*
+|--------------------------------------------------------------------------
+| HORARIOS PERMITIDOS
+|--------------------------------------------------------------------------
+*/
+
 const horariosPermitidos = [
-  { inicio: "13:00", fin: "13:40" },
-  { inicio: "13:40", fin: "14:20" },
-  { inicio: "14:20", fin: "15:00" },
-  { inicio: "15:10", fin: "15:50" },
-  { inicio: "15:50", fin: "16:30" },
-  { inicio: "16:40", fin: "17:20" },
-  { inicio: "17:20", fin: "18:00" }
+  {
+    inicio: "13:00",
+    fin: "13:40"
+  },
+  {
+    inicio: "13:40",
+    fin: "14:20"
+  },
+  {
+    inicio: "14:20",
+    fin: "15:00"
+  },
+  {
+    inicio: "15:10",
+    fin: "15:50"
+  },
+  {
+    inicio: "15:50",
+    fin: "16:30"
+  },
+  {
+    inicio: "16:40",
+    fin: "17:20"
+  },
+  {
+    inicio: "17:20",
+    fin: "18:00"
+  }
 ];
 
-function obtenerDiaDeFecha(fecha: string): string | null {
-  const fechaObjeto = new Date(`${fecha}T12:00:00`);
+/*
+|--------------------------------------------------------------------------
+| OBTENER DÍA DE UNA FECHA
+|--------------------------------------------------------------------------
+*/
 
-  if (Number.isNaN(fechaObjeto.getTime())) {
+function obtenerDiaDeFecha(
+  fecha: string
+): string | null {
+
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(fecha)
+  ) {
+    return null;
+  }
+
+  const partes =
+    fecha.split("-").map(Number);
+
+  const año = partes[0];
+  const mes = partes[1];
+  const dia = partes[2];
+
+  const fechaObjeto =
+    new Date(
+      año,
+      mes - 1,
+      dia,
+      12,
+      0,
+      0
+    );
+
+  /*
+  |--------------------------------------------------------------------------
+  | COMPROBAR QUE LA FECHA REALMENTE EXISTE
+  |--------------------------------------------------------------------------
+  */
+
+  if (
+    fechaObjeto.getFullYear() !== año ||
+    fechaObjeto.getMonth() !== mes - 1 ||
+    fechaObjeto.getDate() !== dia
+  ) {
     return null;
   }
 
@@ -39,32 +114,96 @@ function obtenerDiaDeFecha(fecha: string): string | null {
     "Sábado"
   ];
 
-  return dias[fechaObjeto.getDay()];
+  return dias[
+    fechaObjeto.getDay()
+  ];
 }
 
-function fechaValida(fecha: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+/*
+|--------------------------------------------------------------------------
+| VALIDAR FECHA
+|--------------------------------------------------------------------------
+*/
+
+function fechaValida(
+  fecha: string
+): boolean {
+
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(fecha)
+  ) {
     return false;
   }
 
-  const fechaObjeto = new Date(`${fecha}T12:00:00`);
+  const partes =
+    fecha.split("-").map(Number);
 
-  if (Number.isNaN(fechaObjeto.getTime())) {
+  const año = partes[0];
+  const mes = partes[1];
+  const dia = partes[2];
+
+  const fechaObjeto =
+    new Date(
+      año,
+      mes - 1,
+      dia,
+      12,
+      0,
+      0
+    );
+
+  /*
+  |--------------------------------------------------------------------------
+  | FECHA INEXISTENTE
+  |--------------------------------------------------------------------------
+  */
+
+  if (
+    fechaObjeto.getFullYear() !== año ||
+    fechaObjeto.getMonth() !== mes - 1 ||
+    fechaObjeto.getDate() !== dia
+  ) {
     return false;
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | FECHA ACTUAL
+  |--------------------------------------------------------------------------
+  */
 
   const hoy = new Date();
 
-  const hoyTexto =
-    `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
+  const hoyObjeto =
+    new Date(
+      hoy.getFullYear(),
+      hoy.getMonth(),
+      hoy.getDate(),
+      12,
+      0,
+      0
+    );
 
-  return fecha >= hoyTexto;
+  /*
+  |--------------------------------------------------------------------------
+  | NO PERMITIR FECHAS PASADAS
+  |--------------------------------------------------------------------------
+  */
+
+  return fechaObjeto >= hoyObjeto;
 }
+
+/*
+|--------------------------------------------------------------------------
+| VALIDAR HORARIO INDIVIDUAL
+|--------------------------------------------------------------------------
+*/
 
 function horarioPermitido(
   horaInicio: string,
   horaFin: string
 ): boolean {
+
   return horariosPermitidos.some(
     (horario) =>
       horario.inicio === horaInicio &&
@@ -72,29 +211,55 @@ function horarioPermitido(
   );
 }
 
+/*
+|--------------------------------------------------------------------------
+| VALIDAR INTERVALO DE BLOQUES
+|--------------------------------------------------------------------------
+*/
+
 function bloquesValidos(
   horaInicio: string,
   horaFin: string
 ): boolean {
+
   let encontrado = false;
+
   let horaActual = horaInicio;
 
-  for (const horario of horariosPermitidos) {
-    if (!encontrado && horario.inicio === horaInicio) {
-      encontrado = true;
-      horaActual = horario.fin;
+  for (
+    const horario of horariosPermitidos
+  ) {
 
-      if (horaActual === horaFin) {
+    if (
+      !encontrado &&
+      horario.inicio === horaInicio
+    ) {
+
+      encontrado = true;
+
+      horaActual =
+        horario.fin;
+
+      if (
+        horaActual === horaFin
+      ) {
         return true;
       }
 
       continue;
     }
 
-    if (encontrado && horario.inicio === horaActual) {
-      horaActual = horario.fin;
+    if (
+      encontrado &&
+      horario.inicio === horaActual
+    ) {
 
-      if (horaActual === horaFin) {
+      horaActual =
+        horario.fin;
+
+      if (
+        horaActual === horaFin
+      ) {
         return true;
       }
     }
@@ -104,49 +269,280 @@ function bloquesValidos(
 }
 
 /*
-  GET PÚBLICO
-
-  Solamente devuelve la información necesaria
-  para que el horario pueda mostrar qué bloques
-  están ocupados.
+|--------------------------------------------------------------------------
+| VALIDAR DATOS GENERALES
+|--------------------------------------------------------------------------
 */
-router.get("/publicas", (req, res) => {
-  try {
-    const reservas = db.prepare(`
-      SELECT
-        dia,
-        fecha_programada,
-        hora_inicio,
-        hora_fin,
-        profesor
-      FROM reservas
-      ORDER BY fecha_programada, hora_inicio
-    `).all();
 
-    res.json(reservas);
-  } catch (error) {
-    console.error(error);
+function validarDatosGenerales(
+  profesor: unknown,
+  area: unknown,
+  grado: unknown,
+  seccion: unknown
+) {
 
-    res.status(500).json({
-      mensaje: "No se pudieron obtener las reservas."
-    });
+  if (
+    typeof profesor !== "string" ||
+    typeof area !== "string" ||
+    typeof grado !== "string" ||
+    typeof seccion !== "string"
+  ) {
+
+    return {
+      valido: false,
+      mensaje:
+        "Datos de reserva inválidos."
+    };
   }
-});
+
+  const profesorLimpio =
+    profesor.trim();
+
+  const areaLimpia =
+    area.trim();
+
+  const gradoLimpio =
+    grado.trim();
+
+  const seccionLimpia =
+    seccion.trim();
+
+  if (
+    profesorLimpio === "" ||
+    areaLimpia === "" ||
+    gradoLimpio === "" ||
+    seccionLimpia === ""
+  ) {
+
+    return {
+      valido: false,
+      mensaje:
+        "Todos los campos son obligatorios."
+    };
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | LONGITUDES MÁXIMAS
+  |--------------------------------------------------------------------------
+  */
+
+  if (
+    profesorLimpio.length > 100 ||
+    areaLimpia.length > 100 ||
+    gradoLimpio.length > 30 ||
+    seccionLimpia.length > 20
+  ) {
+
+    return {
+      valido: false,
+      mensaje:
+        "Uno de los campos supera la longitud permitida."
+    };
+  }
+
+  return {
+    valido: true,
+    profesorLimpio,
+    areaLimpia,
+    gradoLimpio,
+    seccionLimpia
+  };
+}
 
 /*
-  GET ADMINISTRADOR
-
-  Devuelve toda la información y requiere
-  contraseña de administrador.
+|--------------------------------------------------------------------------
+| RESERVAS PÚBLICAS
+|--------------------------------------------------------------------------
 */
+
 router.get(
-  "/admin",
-  verificarAdministrador,
+  "/publicas",
   (req, res) => {
+
     try {
-      const reservas = db.prepare(`
-        SELECT
-          id,
+
+      const reservas =
+        db.prepare(`
+          SELECT
+            dia,
+            fecha_programada,
+            hora_inicio,
+            hora_fin,
+            profesor
+          FROM reservas
+          ORDER BY
+            fecha_programada,
+            hora_inicio
+        `).all();
+
+      return res.json(
+        reservas
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+      return res.status(500).json({
+        mensaje:
+          "No se pudieron obtener las reservas."
+      });
+    }
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| CREAR UNA RESERVA
+|--------------------------------------------------------------------------
+*/
+
+router.post(
+  "/",
+  (req, res) => {
+
+    const {
+      profesor,
+      area,
+      grado,
+      seccion,
+      fechaProgramada,
+      horaInicio,
+      horaFin
+    } = req.body;
+
+    const datos =
+      validarDatosGenerales(
+        profesor,
+        area,
+        grado,
+        seccion
+      );
+
+    if (!datos.valido) {
+
+      return res.status(400).json({
+        mensaje:
+          datos.mensaje
+      });
+    }
+
+    if (
+      typeof fechaProgramada !== "string" ||
+      typeof horaInicio !== "string" ||
+      typeof horaFin !== "string"
+    ) {
+
+      return res.status(400).json({
+        mensaje:
+          "Datos de reserva inválidos."
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FECHA
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      !fechaValida(
+        fechaProgramada
+      )
+    ) {
+
+      return res.status(400).json({
+        mensaje:
+          "La fecha no es válida o corresponde a una fecha pasada."
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | DÍA
+    |--------------------------------------------------------------------------
+    */
+
+    const dia =
+      obtenerDiaDeFecha(
+        fechaProgramada
+      );
+
+    if (
+      !dia ||
+      !diasPermitidos.includes(dia)
+    ) {
+
+      return res.status(400).json({
+        mensaje:
+          "Solo se pueden realizar reservas de lunes a viernes."
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | HORARIO
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      !horarioPermitido(
+        horaInicio,
+        horaFin
+      )
+    ) {
+
+      return res.status(400).json({
+        mensaje:
+          "El horario seleccionado no es válido."
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | COMPROBAR DISPONIBILIDAD
+    |--------------------------------------------------------------------------
+    */
+
+    const reservaExistente =
+      db.prepare(`
+        SELECT id
+        FROM reservas
+        WHERE fecha_programada = ?
+          AND hora_inicio < ?
+          AND hora_fin > ?
+        LIMIT 1
+      `).get(
+        fechaProgramada,
+        horaFin,
+        horaInicio
+      );
+
+    if (reservaExistente) {
+
+      return res.status(409).json({
+        mensaje:
+          "El horario seleccionado ya está reservado para esa fecha."
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | CREAR RESERVA
+    |--------------------------------------------------------------------------
+    */
+
+    const grupoId =
+      randomUUID();
+
+    const fechaReserva =
+      new Date().toISOString();
+
+    const resultado =
+      db.prepare(`
+        INSERT INTO reservas (
+          grupo_id,
           profesor,
           area,
           grado,
@@ -156,417 +552,524 @@ router.get(
           hora_inicio,
           hora_fin,
           fecha_reserva
-        FROM reservas
-        ORDER BY fecha_programada, hora_inicio
-      `).all();
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        grupoId,
+        datos.profesorLimpio,
+        datos.areaLimpia,
+        datos.gradoLimpio,
+        datos.seccionLimpia,
+        dia,
+        fechaProgramada,
+        horaInicio,
+        horaFin,
+        fechaReserva
+      );
 
-      res.json(reservas);
+    return res.status(201).json({
+      mensaje:
+        "Reserva realizada correctamente.",
+      id:
+        resultado.lastInsertRowid,
+      grupoId
+    });
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| CREAR MÚLTIPLES RESERVAS
+|--------------------------------------------------------------------------
+*/
+
+router.post(
+  "/multiple",
+  (req, res) => {
+
+    const {
+      profesor,
+      area,
+      grado,
+      seccion,
+      fechaProgramada,
+      reservas
+    } = req.body;
+
+    const datos =
+      validarDatosGenerales(
+        profesor,
+        area,
+        grado,
+        seccion
+      );
+
+    if (!datos.valido) {
+
+      return res.status(400).json({
+        mensaje:
+          datos.mensaje
+      });
+    }
+
+    if (
+      typeof fechaProgramada !== "string" ||
+      !Array.isArray(reservas)
+    ) {
+
+      return res.status(400).json({
+        mensaje:
+          "Datos de reserva inválidos."
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | CANTIDAD DE BLOQUES
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      reservas.length === 0
+    ) {
+
+      return res.status(400).json({
+        mensaje:
+          "Debe seleccionar al menos un horario."
+      });
+    }
+
+    if (
+      reservas.length > 35
+    ) {
+
+      return res.status(400).json({
+        mensaje:
+          "Se seleccionaron demasiados horarios."
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FECHA
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      !fechaValida(
+        fechaProgramada
+      )
+    ) {
+
+      return res.status(400).json({
+        mensaje:
+          "La fecha no es válida o corresponde a una fecha pasada."
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | DÍA
+    |--------------------------------------------------------------------------
+    */
+
+    const dia =
+      obtenerDiaDeFecha(
+        fechaProgramada
+      );
+
+    if (
+      !dia ||
+      !diasPermitidos.includes(dia)
+    ) {
+
+      return res.status(400).json({
+        mensaje:
+          "Solo se pueden realizar reservas de lunes a viernes."
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDAR CADA HORARIO
+    |--------------------------------------------------------------------------
+    */
+
+    for (
+      const reserva of reservas
+    ) {
+
+      if (
+        typeof reserva !== "object" ||
+        reserva === null ||
+        typeof reserva.horaInicio !== "string" ||
+        typeof reserva.horaFin !== "string"
+      ) {
+
+        return res.status(400).json({
+          mensaje:
+            "Uno de los horarios enviados no es válido."
+        });
+      }
+
+      const horarioIndividual =
+        horarioPermitido(
+          reserva.horaInicio,
+          reserva.horaFin
+        );
+
+      const intervaloValido =
+        bloquesValidos(
+          reserva.horaInicio,
+          reserva.horaFin
+        );
+
+      if (
+        !horarioIndividual &&
+        !intervaloValido
+      ) {
+
+        return res.status(400).json({
+          mensaje:
+            "Uno de los horarios seleccionados no es válido."
+        });
+      }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | EVITAR DUPLICADOS DENTRO DE LA MISMA PETICIÓN
+    |--------------------------------------------------------------------------
+    */
+
+    for (
+      let i = 0;
+      i < reservas.length;
+      i++
+    ) {
+
+      for (
+        let j = i + 1;
+        j < reservas.length;
+        j++
+      ) {
+
+        const reservaA =
+          reservas[i];
+
+        const reservaB =
+          reservas[j];
+
+        if (
+          reservaA.horaInicio <
+            reservaB.horaFin &&
+          reservaA.horaFin >
+            reservaB.horaInicio
+        ) {
+
+          return res.status(409).json({
+            mensaje:
+              "Los horarios seleccionados se superponen."
+          });
+        }
+      }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | COMPROBAR BASE DE DATOS
+    |--------------------------------------------------------------------------
+    */
+
+    for (
+      const reserva of reservas
+    ) {
+
+      const reservaExistente =
+        db.prepare(`
+          SELECT id
+          FROM reservas
+          WHERE fecha_programada = ?
+            AND hora_inicio < ?
+            AND hora_fin > ?
+          LIMIT 1
+        `).get(
+          fechaProgramada,
+          reserva.horaFin,
+          reserva.horaInicio
+        );
+
+      if (
+        reservaExistente
+      ) {
+
+        return res.status(409).json({
+          mensaje:
+            `El horario ${reserva.horaInicio} - ${reserva.horaFin} ya está reservado para esa fecha.`
+        });
+      }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | CREAR GRUPO
+    |--------------------------------------------------------------------------
+    */
+
+    const grupoId =
+      randomUUID();
+
+    const fechaReserva =
+      new Date().toISOString();
+
+    const insertar =
+      db.prepare(`
+        INSERT INTO reservas (
+          grupo_id,
+          profesor,
+          area,
+          grado,
+          seccion,
+          dia,
+          fecha_programada,
+          hora_inicio,
+          hora_fin,
+          fecha_reserva
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+    /*
+    |--------------------------------------------------------------------------
+    | TRANSACCIÓN
+    |--------------------------------------------------------------------------
+    */
+
+    const insertarReservas =
+      db.transaction(() => {
+
+        for (
+          const reserva of reservas
+        ) {
+
+          insertar.run(
+            grupoId,
+            datos.profesorLimpio,
+            datos.areaLimpia,
+            datos.gradoLimpio,
+            datos.seccionLimpia,
+            dia,
+            fechaProgramada,
+            reserva.horaInicio,
+            reserva.horaFin,
+            fechaReserva
+          );
+        }
+      });
+
+    try {
+
+      insertarReservas();
+
+      return res.status(201).json({
+        mensaje:
+          "Reservas realizadas correctamente.",
+        grupoId
+      });
+
     } catch (error) {
+
       console.error(error);
 
-      res.status(500).json({
-        mensaje: "No se pudieron obtener las reservas."
+      return res.status(500).json({
+        mensaje:
+          "No se pudieron guardar las reservas."
       });
     }
   }
 );
 
 /*
-  GET GENERAL
-
-  Lo dejamos protegido para evitar que alguien
-  pueda obtener toda la información directamente.
+|--------------------------------------------------------------------------
+| ADMIN - OBTENER RESERVAS
+|--------------------------------------------------------------------------
 */
+
+router.get(
+  "/admin",
+  verificarAdministrador,
+  (req, res) => {
+
+    try {
+
+      const reservas =
+        db.prepare(`
+          SELECT
+            id,
+            grupo_id,
+            profesor,
+            area,
+            grado,
+            seccion,
+            dia,
+            fecha_programada,
+            hora_inicio,
+            hora_fin,
+            fecha_reserva
+          FROM reservas
+          ORDER BY
+            fecha_programada,
+            hora_inicio
+        `).all();
+
+      return res.json(
+        reservas
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+      return res.status(500).json({
+        mensaje:
+          "No se pudieron obtener las reservas."
+      });
+    }
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN - OBTENER TODAS
+|--------------------------------------------------------------------------
+*/
+
 router.get(
   "/",
   verificarAdministrador,
   (req, res) => {
-    try {
-      const reservas = db.prepare(`
-        SELECT *
-        FROM reservas
-        ORDER BY fecha_programada, hora_inicio
-      `).all();
 
-      res.json(reservas);
+    try {
+
+      const reservas =
+        db.prepare(`
+          SELECT *
+          FROM reservas
+          ORDER BY
+            fecha_programada,
+            hora_inicio
+        `).all();
+
+      return res.json(
+        reservas
+      );
+
     } catch (error) {
+
       console.error(error);
 
-      res.status(500).json({
-        mensaje: "No se pudieron obtener las reservas."
+      return res.status(500).json({
+        mensaje:
+          "No se pudieron obtener las reservas."
       });
     }
   }
 );
 
 /*
-  CREAR UNA RESERVA
+|--------------------------------------------------------------------------
+| ADMIN - ELIMINAR GRUPO
+|--------------------------------------------------------------------------
 */
-router.post("/", (req, res) => {
-  const {
-    profesor,
-    area,
-    grado,
-    seccion,
-    fechaProgramada,
-    horaInicio,
-    horaFin
-  } = req.body;
 
-  if (
-    typeof profesor !== "string" ||
-    typeof area !== "string" ||
-    typeof grado !== "string" ||
-    typeof seccion !== "string" ||
-    typeof fechaProgramada !== "string" ||
-    typeof horaInicio !== "string" ||
-    typeof horaFin !== "string"
-  ) {
-    return res.status(400).json({
-      mensaje: "Datos de reserva inválidos."
-    });
-  }
+router.delete(
+  "/grupo/:grupoId",
+  verificarAdministrador,
+  (req, res) => {
 
-  const profesorLimpio = profesor.trim();
-  const areaLimpia = area.trim();
-  const gradoLimpio = grado.trim();
-  const seccionLimpia = seccion.trim();
-
-  if (
-    profesorLimpio === "" ||
-    areaLimpia === "" ||
-    gradoLimpio === "" ||
-    seccionLimpia === ""
-  ) {
-    return res.status(400).json({
-      mensaje: "Todos los campos son obligatorios."
-    });
-  }
-
-  if (
-    profesorLimpio.length > 100 ||
-    areaLimpia.length > 100 ||
-    gradoLimpio.length > 30 ||
-    seccionLimpia.length > 20
-  ) {
-    return res.status(400).json({
-      mensaje: "Uno de los campos supera la longitud permitida."
-    });
-  }
-
-  if (!fechaValida(fechaProgramada)) {
-    return res.status(400).json({
-      mensaje:
-        "La fecha no es válida o corresponde a una fecha pasada."
-    });
-  }
-
-  const dia = obtenerDiaDeFecha(fechaProgramada);
-
-  if (!dia || !diasPermitidos.includes(dia)) {
-    return res.status(400).json({
-      mensaje:
-        "Solo se pueden realizar reservas de lunes a viernes."
-    });
-  }
-
-  if (!horarioPermitido(horaInicio, horaFin)) {
-    return res.status(400).json({
-      mensaje: "El horario seleccionado no es válido."
-    });
-  }
-
-  const reservaExistente = db.prepare(`
-    SELECT id
-    FROM reservas
-    WHERE fecha_programada = ?
-      AND hora_inicio < ?
-      AND hora_fin > ?
-    LIMIT 1
-  `).get(
-    fechaProgramada,
-    horaFin,
-    horaInicio
-  );
-
-  if (reservaExistente) {
-    return res.status(409).json({
-      mensaje:
-        "El horario seleccionado ya está reservado para esa fecha."
-    });
-  }
-
-  const fechaReserva = new Date().toISOString();
-
-  const resultado = db.prepare(`
-    INSERT INTO reservas (
-      profesor,
-      area,
-      grado,
-      seccion,
-      dia,
-      fecha_programada,
-      hora_inicio,
-      hora_fin,
-      fecha_reserva
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    profesorLimpio,
-    areaLimpia,
-    gradoLimpio,
-    seccionLimpia,
-    dia,
-    fechaProgramada,
-    horaInicio,
-    horaFin,
-    fechaReserva
-  );
-
-  res.status(201).json({
-    mensaje: "Reserva realizada correctamente.",
-    id: resultado.lastInsertRowid
-  });
-});
-
-/*
-  CREAR VARIAS RESERVAS PARA UNA MISMA FECHA
-*/
-router.post("/multiple", (req, res) => {
-  const {
-    profesor,
-    area,
-    grado,
-    seccion,
-    fechaProgramada,
-    reservas
-  } = req.body;
-
-  if (
-    typeof profesor !== "string" ||
-    typeof area !== "string" ||
-    typeof grado !== "string" ||
-    typeof seccion !== "string" ||
-    typeof fechaProgramada !== "string" ||
-    !Array.isArray(reservas)
-  ) {
-    return res.status(400).json({
-      mensaje: "Datos de reserva inválidos."
-    });
-  }
-
-  const profesorLimpio = profesor.trim();
-  const areaLimpia = area.trim();
-  const gradoLimpio = grado.trim();
-  const seccionLimpia = seccion.trim();
-
-  if (
-    profesorLimpio === "" ||
-    areaLimpia === "" ||
-    gradoLimpio === "" ||
-    seccionLimpia === ""
-  ) {
-    return res.status(400).json({
-      mensaje: "Todos los campos son obligatorios."
-    });
-  }
-
-  if (
-    profesorLimpio.length > 100 ||
-    areaLimpia.length > 100 ||
-    gradoLimpio.length > 30 ||
-    seccionLimpia.length > 20
-  ) {
-    return res.status(400).json({
-      mensaje: "Uno de los campos supera la longitud permitida."
-    });
-  }
-
-  if (reservas.length === 0) {
-    return res.status(400).json({
-      mensaje: "Debe seleccionar al menos un horario."
-    });
-  }
-
-  if (reservas.length > 35) {
-    return res.status(400).json({
-      mensaje: "Se seleccionaron demasiados horarios."
-    });
-  }
-
-  if (!fechaValida(fechaProgramada)) {
-    return res.status(400).json({
-      mensaje:
-        "La fecha no es válida o corresponde a una fecha pasada."
-    });
-  }
-
-  const dia = obtenerDiaDeFecha(fechaProgramada);
-
-  if (!dia || !diasPermitidos.includes(dia)) {
-    return res.status(400).json({
-      mensaje:
-        "Solo se pueden realizar reservas de lunes a viernes."
-    });
-  }
-
-  /*
-    Validar todos los horarios recibidos.
-  */
-  for (const reserva of reservas) {
-    if (
-      typeof reserva !== "object" ||
-      typeof reserva.horaInicio !== "string" ||
-      typeof reserva.horaFin !== "string"
-    ) {
-      return res.status(400).json({
-        mensaje: "Uno de los horarios enviados no es válido."
-      });
-    }
+    const grupoId =
+      req.params.grupoId;
 
     if (
-      !horarioPermitido(
-        reserva.horaInicio,
-        reserva.horaFin
-      ) &&
-      !bloquesValidos(
-        reserva.horaInicio,
-        reserva.horaFin
-      )
+      typeof grupoId !== "string" ||
+      grupoId.trim() === ""
     ) {
+
       return res.status(400).json({
-        mensaje: "Uno de los horarios seleccionados no es válido."
-      });
-    }
-  }
-
-  /*
-    Verificar que no haya horarios repetidos o
-    superpuestos dentro de la misma solicitud.
-  */
-  for (let i = 0; i < reservas.length; i++) {
-    for (let j = i + 1; j < reservas.length; j++) {
-      const reservaA = reservas[i];
-      const reservaB = reservas[j];
-
-      if (
-        reservaA.horaInicio < reservaB.horaFin &&
-        reservaA.horaFin > reservaB.horaInicio
-      ) {
-        return res.status(409).json({
-          mensaje:
-            "Los horarios seleccionados se superponen."
-        });
-      }
-    }
-  }
-
-  /*
-    Verificar que ninguno de los horarios ya esté
-    reservado para la fecha seleccionada.
-  */
-  for (const reserva of reservas) {
-    const reservaExistente = db.prepare(`
-      SELECT id
-      FROM reservas
-      WHERE fecha_programada = ?
-        AND hora_inicio < ?
-        AND hora_fin > ?
-      LIMIT 1
-    `).get(
-      fechaProgramada,
-      reserva.horaFin,
-      reserva.horaInicio
-    );
-
-    if (reservaExistente) {
-      return res.status(409).json({
         mensaje:
-          `El horario ${reserva.horaInicio} - ${reserva.horaFin} ya está reservado para esa fecha.`
+          "Grupo de reserva inválido."
       });
     }
-  }
 
-  /*
-    Todas las reservas se insertan dentro de una
-    transacción. Si una falla, ninguna se guarda.
-  */
-  const insertar = db.prepare(`
-    INSERT INTO reservas (
-      profesor,
-      area,
-      grado,
-      seccion,
-      dia,
-      fecha_programada,
-      hora_inicio,
-      hora_fin,
-      fecha_reserva
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+    const resultado =
+      db.prepare(`
+        DELETE FROM reservas
+        WHERE grupo_id = ?
+      `).run(grupoId);
 
-  const fechaReserva = new Date().toISOString();
+    if (
+      resultado.changes === 0
+    ) {
 
-  const insertarReservas = db.transaction(() => {
-    for (const reserva of reservas) {
-      insertar.run(
-        profesorLimpio,
-        areaLimpia,
-        gradoLimpio,
-        seccionLimpia,
-        dia,
-        fechaProgramada,
-        reserva.horaInicio,
-        reserva.horaFin,
-        fechaReserva
-      );
+      return res.status(404).json({
+        mensaje:
+          "La reserva no existe."
+      });
     }
-  });
 
-  try {
-    insertarReservas();
-
-    res.status(201).json({
-      mensaje: "Reservas realizadas correctamente."
-    });
-  } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      mensaje: "No se pudieron guardar las reservas."
+    return res.json({
+      mensaje:
+        "Reserva eliminada correctamente.",
+      bloquesEliminados:
+        resultado.changes
     });
   }
-});
+);
 
 /*
-  ELIMINAR RESERVA
+|--------------------------------------------------------------------------
+| ADMIN - ELIMINAR RESERVA INDIVIDUAL
+|--------------------------------------------------------------------------
 */
+
 router.delete(
   "/:id",
   verificarAdministrador,
   (req, res) => {
-    const id = Number(req.params.id);
 
-    if (!Number.isInteger(id) || id <= 0) {
+    const id =
+      Number(req.params.id);
+
+    if (
+      !Number.isInteger(id) ||
+      id <= 0
+    ) {
+
       return res.status(400).json({
-        mensaje: "ID de reserva inválido."
+        mensaje:
+          "ID de reserva inválido."
       });
     }
 
-    const resultado = db.prepare(`
-      DELETE FROM reservas
-      WHERE id = ?
-    `).run(id);
+    const resultado =
+      db.prepare(`
+        DELETE FROM reservas
+        WHERE id = ?
+      `).run(id);
 
-    if (resultado.changes === 0) {
+    if (
+      resultado.changes === 0
+    ) {
+
       return res.status(404).json({
-        mensaje: "La reserva no existe."
+        mensaje:
+          "La reserva no existe."
       });
     }
 
-    res.json({
-      mensaje: "Reserva eliminada correctamente."
+    return res.json({
+      mensaje:
+        "Reserva eliminada correctamente."
     });
   }
 );

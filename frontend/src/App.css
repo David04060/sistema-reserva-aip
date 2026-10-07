@@ -89,12 +89,16 @@ body {
 }
 
 .horario-header {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-.horario-header h1 {
-  margin-bottom: 10px;
+  position: relative;
+  width: 100%; 
+  max-width: 1000px; 
+  margin: 0 auto 20px auto; 
+  padding: 20px; 
+  box-sizing: border-box; 
+} 
+.horario-header h1 { 
+  text-align: center; 
+  margin: 0; 
 }
 
 .horario-header h2 {
@@ -472,4 +476,41 @@ body {
 
 .boton-volver-calendario:hover {
   background-color: #616161;
+}
+
+.boton-salir {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+
+  padding: 9px 18px;
+  border: none;
+  border-radius: 6px;
+
+  background-color: #d32f2f;
+  color: white;
+
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.boton-salir:hover {
+  background-color: #b71c1c;
+}
+.boton-administracion {
+  margin-top: 12px;
+  padding: 9px 18px;
+
+  border: 1px solid #1976d2;
+  border-radius: 6px;
+
+  background-color: white;
+  color: #1976d2;
+
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.boton-administracion:hover {
+  background-color: #e3f2fd;
 }

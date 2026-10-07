@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface Bloque {
   id: number;
@@ -100,6 +101,7 @@ const nombresDias = [
 ];
 
 function Horario() {
+  const navigate = useNavigate();
   const profesor =
     localStorage.getItem("profesor") || "";
 
@@ -165,6 +167,11 @@ function Horario() {
     cargarReservas();
   }, []);
 
+
+  const salir = () => {
+    sessionStorage.removeItem("profesor");
+    navigate("/", { replace: true });
+  };
   /*
     Obtener cantidad de días del mes.
   */
@@ -670,7 +677,10 @@ function Horario() {
           <strong>{profesor}</strong>
         </p>
       </div>
-
+      <button className="boton-salir"
+              onClick={salir} >
+          SALIR
+        </button>
       {!fechaSeleccionada &&
         !mostrarFormulario && (
           <div className="calendario-container">

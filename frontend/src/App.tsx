@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Inicio from "./pages/Inicio";
-import HorarioReal from "./pages/Horario";
+import Horario from "./pages/Horario";
 import RutaProtegida from "./RutaProtegida";
 import Admin from "./pages/Admin";
 
@@ -19,8 +19,8 @@ function App() {
         <Route element={<RutaProtegida />}>
 
           <Route
-            path="/horarioreal"
-            element={<HorarioReal />}
+            path="/horario"
+            element={<Horario />}
           />
 
         </Route>
