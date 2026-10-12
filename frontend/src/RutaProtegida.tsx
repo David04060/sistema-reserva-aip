@@ -1,25 +1,10 @@
-import {
-  Navigate,
-  Outlet
-} from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 
 function RutaProtegida() {
+  const profesor = sessionStorage.getItem("profesor");
 
-  const profesor =
-    sessionStorage.getItem(
-      "profesor"
-    );
-
-  if (
-    !profesor ||
-    profesor.trim() === ""
-  ) {
-    return (
-      <Navigate
-        to="/"
-        replace
-      />
-    );
+  if (!profesor || profesor.trim() === "") {
+    return <Navigate to="/" replace />;
   }
 
   return <Outlet />;

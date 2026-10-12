@@ -1,18 +1,14 @@
 import Database from "better-sqlite3";
 import path from "path";
+import "./config";
 
-const databasePath =
-  process.env.DATABASE_PATH ||
-  path.join(
-    process.cwd(),
-    "database.sqlite"
-  );
+const databasePath = process.env.DATABASE_PATH || path.join(__dirname, "..", "database.sqlite");
 
-const db =
-  new Database(databasePath);
+const db = new Database(databasePath);
 
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
+db.pragma("busy_timeout = 5000");
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS reservas (
@@ -30,13 +26,12 @@ db.exec(`
   )
 `);
 
-try {
+const columnas = db.prepare("PRAGMA table_info(reservas)").all() as { name: string }[];
+if (!columnas.some((columna) => columna.name === "grupo_id")) {
   db.exec(`
     ALTER TABLE reservas
     ADD COLUMN grupo_id TEXT
   `);
-} catch (error) {
-  // La columna ya existe.
 }
 
 db.exec(`

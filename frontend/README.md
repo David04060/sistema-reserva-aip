@@ -1,32 +1,10 @@
-# React + TypeScript + Vite
+# Frontend del Sistema de Reservas AIP
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Interfaz React, TypeScript y Vite. La documentación de instalación y configuración está en el [README del proyecto](../README.md).
 
-Currently, two official plugins are available:
+- `npm run dev`: iniciar la interfaz en el puerto 5173.
+- `npm run build`: comprobar TypeScript y generar `dist`.
+- `npm run lint`: revisar el código.
+- `npm test`: probar agrupación de horarios, manejo HTTP y formato de fechas.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Las pantallas están en `src/pages`, los componentes comunes en `src/components`, las reglas de horarios en `src/domain` y las utilidades de fechas y HTTP en `src/lib`. La hoja `src/App.css` contiene los estilos y ajustes para móvil.

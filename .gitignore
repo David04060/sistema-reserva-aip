@@ -8,6 +8,9 @@ node_modules/
 
 database.sqlite
 backend/database.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite
 
 *.log
 .DS_Store

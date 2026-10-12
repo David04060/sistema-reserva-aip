@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Inicio from "./pages/Inicio";
 import Horario from "./pages/Horario";
@@ -8,30 +8,16 @@ import Admin from "./pages/Admin";
 function App() {
   return (
     <BrowserRouter>
-
       <Routes>
-
-        <Route
-          path="/"
-          element={<Inicio />}
-        />
+        <Route path="/" element={<Inicio />} />
 
         <Route element={<RutaProtegida />}>
-
-          <Route
-            path="/horario"
-            element={<Horario />}
-          />
-
+          <Route path="/horario" element={<Horario />} />
         </Route>
 
-        <Route
-          path="/admin"
-          element={<Admin />}
-        />
-
+        <Route path="/admin" element={<Admin />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-
     </BrowserRouter>
   );
 }
