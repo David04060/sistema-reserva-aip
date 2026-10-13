@@ -1,8 +1,6 @@
 # Sistema de Reservas AIP
 
-Aplicación existente para reservar el Aula de Innovación Pedagógica de lunes a viernes. Incluye calendario, selección de bloques, formulario de reserva y administración con búsqueda. Se conserva la interfaz y el backend Express con SQLite, y se incorpora una versión compatible con Cloudflare Workers + D1.
-
-Documentación actualizada el **13 de octubre de 2026**. La adaptación se validó localmente; no se ejecutó un despliegue a producción, SQL remoto ni configuración remota de secretos durante este trabajo.
+Aplicación existente para reservar el Aula de Innovación Pedagógica de lunes a viernes. Incluye calendario, selección de bloques, formulario de reserva y administración con búsqueda. Se incorpora una versión compatible con Cloudflare Workers + D1.
 
 ## Requisitos e instalación
 
@@ -158,9 +156,3 @@ Si se necesita generar el frontend para el backend Express original, ejecutar `n
 - `backend/src/domain`: reglas compartidas de reservas.
 - `backend/src/routes`, `backend/src/middleware`: rutas y autorización Express.
 - `backend/tests`, `frontend/tests`: pruebas de ambos entornos.
-
-## Pendientes antes de producción
-
-Confirmar la cuenta y el identificador D1, configurar secretos, validar los triggers contra una D1 remota de pruebas y medir el comportamiento remoto antes del despliegue. La base local original no se migra automáticamente. Las cuotas del plan gratuito aplican y los listados completos crecen con el historial.
-
-`wrangler.jsonc` habilita logs de invocación y persistencia; esa configuración todavía debe validarse en el entorno remoto. La guía [Cloudflare](frontend/CLOUDFLARE.md) detalla límites, migración de datos y pasos pendientes.
