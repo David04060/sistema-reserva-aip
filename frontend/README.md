@@ -1,7 +1,5 @@
 # Frontend del Sistema de Reservas AIP
 
-Interfaz existente con React 19, TypeScript y Vite 8. Conserva las pantallas y estilos e incorpora la API Workers en el mismo proyecto. Documentación actualizada el **13 de octubre de 2026**.
-
 Consultar el [README general](../README.md) para instalación y reglas del sistema, y [CLOUDFLARE.md](CLOUDFLARE.md) para contratos D1, autenticación y preparación de producción.
 
 ## Desarrollo Cloudflare
