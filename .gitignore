@@ -15,3 +15,21 @@ backend/database.sqlite
 *.log
 .DS_Store
 Thumbs.db
+.wrangler/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+frontend/.dev.vars*
+frontend/.wrangler/
+
+# Local secrets, databases and generated files
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+*.tsbuildinfo

@@ -4,9 +4,10 @@
   "version": "1.0.0",
   "scripts": {
     "dev:backend": "npm --prefix backend run dev",
-    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:frontend": "npm --prefix frontend run dev:express",
+    "dev:cloudflare": "npm --prefix frontend run dev",
     "build": "npm --prefix backend run build && npm --prefix frontend run build",
-    "lint": "node frontend/node_modules/oxlint/bin/oxlint --config .oxlintrc.json --deny-warnings backend/src backend/tests frontend/src frontend/tests",
+    "lint": "node frontend/node_modules/oxlint/bin/oxlint --config .oxlintrc.json --deny-warnings backend/src backend/tests frontend/src frontend/tests frontend/worker",
     "test": "npm --prefix backend test && npm --prefix frontend test",
     "check": "npm run build && npm run lint && npm run test && npm run format:check",
     "format": "prettier --write .",
